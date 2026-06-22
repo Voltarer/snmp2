@@ -8,12 +8,13 @@
 #include <net-snmp/agent/net-snmp-agent-includes.h>
 #include "ifTable.h"
 #include <net-snmp/agent/table_data.h>
+#include <stdio.h> // Добавлено для snprintf
 
 /** Initialize the ifTable table by defining its contents and how it's structured */
 void
 initialize_table_ifTable(void)
 {
-    const oid ifTable_oid[] = {1,3,6,1,2,1,2,2};
+    const oid ifTable_oid[] = {1,3,6,1,4,1,9999,2,2};
     netsnmp_table_data_set *table_set;
     netsnmp_table_row *row;
 
@@ -82,36 +83,46 @@ initialize_table_ifTable(void)
                               0);
     
     /* registering the table with the master agent */
-    /* note: if you don't need a subhandler to deal with any aspects
-       of the request, change ifTable_handler to "NULL" */
     netsnmp_register_table_data_set(netsnmp_create_handler_registration("ifTable", ifTable_handler,
                                                         ifTable_oid,
                                                         OID_LENGTH(ifTable_oid),
                                                         HANDLER_CAN_RWRITE),
                             table_set, NULL);
-    row = netsnmp_create_table_data_row();
 
-    long ifIndex_val = 1;
-    long admin_status = 1;
-    long oper_status = 2;
-    long last_change = 1387400;
+    for (int i = 1; i <= 1; i++) {
+        row = netsnmp_create_table_data_row();
 
-    netsnmp_table_row_add_index(row, ASN_INTEGER,&ifIndex_val, sizeof(ifIndex_val));
+        long ifIndex_val = i;
+        long admin_status = 1;       // up (1)
+        long oper_status = 2;        // down (2)
+        long last_change = 1387400;  // 3 hours 51 minutes 14 seconds (1387400)
 
-    netsnmp_set_row_column (row, 2, ASN_OCTET_STR, "F1", strlen("F1"));
-    netsnmp_set_row_column(row, 7, ASN_INTEGER,(const char *)&admin_status, sizeof(admin_status));
-    netsnmp_set_row_column(row, 8, ASN_INTEGER,(const char *)&oper_status, sizeof(oper_status));
-    netsnmp_set_row_column(row, 9, ASN_INTEGER,(const char *)&last_change, sizeof(last_change));
+        // Устанавливаем индекс строки (номер текущего порта)
+        netsnmp_table_row_add_index(row, ASN_INTEGER, &ifIndex_val, sizeof(ifIndex_val));
 
-    netsnmp_table_dataset_add_row(table_set,row);
+        char descr[16];
+        snprintf(descr, sizeof(descr), "F%d", i);
+        netsnmp_set_row_column(row, COLUMN_IFDESCR, ASN_OCTET_STR, descr, strlen(descr));
+
+        // COLUMN_IFADMINSTATUS: Административное состояние
+        netsnmp_set_row_column(row, COLUMN_IFADMINSTATUS, ASN_INTEGER, (const char *)&admin_status, sizeof(admin_status));
+
+        // COLUMN_IFOPERSTATUS: Операционное состояние
+        netsnmp_set_row_column(row, COLUMN_IFOPERSTATUS, ASN_INTEGER, (const char *)&oper_status, sizeof(oper_status));
+
+        // COLUMN_IFLASTCHANGE: Время последнего изменения (Тип ASN_TIMETICKS!)
+        netsnmp_set_row_column(row, COLUMN_IFLASTCHANGE, ASN_TIMETICKS, (const char *)&last_change, sizeof(last_change));
+
+        // Добавляем заполненную строку в наш датасет
+        netsnmp_table_dataset_add_row(table_set, row);
+    }
 }
 
 /** Initializes the ifTable module */
 void
 init_ifTable(void)
 {
-
-  /* here we initialize all the tables we're planning on supporting */
+    /* here we initialize all the tables we're planning on supporting */
     initialize_table_ifTable();
 }
 
@@ -122,9 +133,7 @@ ifTable_handler(
     netsnmp_handler_registration      *reginfo,
     netsnmp_agent_request_info        *reqinfo,
     netsnmp_request_info              *requests) {
-    /* perform anything here that you need to do.  The requests have
-       already been processed by the master table_dataset handler, but
-       this gives you chance to act on the request in some other way
-       if need be. */
+    /* Нам не нужно здесь ничего делать руками, так как встроенный 
+       dataset-обработчик net-snmp сам автоматически отдаст данные из памяти. */
     return SNMP_ERR_NOERROR;
 }

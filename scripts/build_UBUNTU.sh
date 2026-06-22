@@ -1,4 +1,4 @@
-PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 BUILD_DIR="$PROJECT_ROOT/build"
 
 echo "Идет создание..."

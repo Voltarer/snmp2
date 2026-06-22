@@ -1,3 +1,9 @@
 *.exe
 build/
 .vscode
+toolchain/
+net-snmp-5.9.3/
+net-snmp-5.9.3.tar.gz
+mips_docker/my_agent
+mips_docker/romfs.tar.gz
+lib/
