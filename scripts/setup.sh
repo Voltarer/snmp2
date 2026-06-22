@@ -1,18 +1,20 @@
 #!/bin/bash
-set -e
 
 # --- НАСТРОЙКА ПУТЕЙ ---
 PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-TOOLCHAIN_URL="https://github.com/Voltarer/snmp2/releases/tag/docker/toolchain.tar.gz" 
-ROMFS_URL="https://github.com/Voltarer/snmp2/releases/tag/docker/romfs.tar.gz"
+# Прямые ссылки на скачивание файлов из релизов GitHub
+TOOLCHAIN_URL="https://github.com/Voltarer/snmp2/releases/download/docker/mips-buildroot-linux-uclibc_sdk-buildroot.tar.xz" 
+ROMFS_URL="https://github.com/Voltarer/snmp2/releases/download/docker/romfs.tar.gz"
 
+# Скачивание net-snmp с официального зеркала GitHub
 NETSNMP_VER="5.9.3"
-NETSNMP_URL="https://sourceforge.net/projects/net-snmp/files/net-snmp/${NETSNMP_VER}/net-snmp-${NETSNMP_VER}.tar.gz"
+NETSNMP_URL="https://github.com/net-snmp/net-snmp/archive/refs/tags/v${NETSNMP_VER}.tar.gz"
 
 LIB_DIR="$PROJECT_ROOT/lib"
 NETSNMP_DIR="$LIB_DIR/net-snmp-$NETSNMP_VER"
 LIB_TOOLCHAIN="$PROJECT_ROOT/toolchain"
+MIPS_DOCKER_DIR="$PROJECT_ROOT/mips_docker"
 
 echo "=== Запуск настройки окружения ==="
 
@@ -33,6 +35,7 @@ echo "Проверка структуры папок..."
 mkdir -p "$LIB_DIR"
 mkdir -p "$LIB_TOOLCHAIN"
 mkdir -p "$PROJECT_ROOT/build"
+mkdir -p "$MIPS_DOCKER_DIR"
 echo "✅ Базовые папки проверены/созданы."
 
 ######################################################################
@@ -42,11 +45,12 @@ if [ -d "$LIB_TOOLCHAIN/mips-buildroot-linux-uclibc_sdk-buildroot" ]; then
     echo "✅ Toolchain уже распакован."
 else
     echo "Скачивание Toolchain..."
-    $DOWNLOAD_CMD "$PROJECT_ROOT/toolchain.tar.gz" "$TOOLCHAIN_URL"
+    $DOWNLOAD_CMD "$PROJECT_ROOT/mips-buildroot-linux-uclibc_sdk-buildroot.tar.xz" "$TOOLCHAIN_URL"
     
     echo "Распаковка Toolchain..."
-    tar -xzf "$PROJECT_ROOT/toolchain.tar.gz" -C "$LIB_TOOLCHAIN"
-    rm "$PROJECT_ROOT/toolchain.tar.gz"
+    # Для формата .tar.xz используем -xf для автоматического определения архиватор-фильтра
+    tar -xf "$PROJECT_ROOT/mips-buildroot-linux-uclibc_sdk-buildroot.tar.xz" -C "$LIB_TOOLCHAIN"
+    rm "$PROJECT_ROOT/mips-buildroot-linux-uclibc_sdk-buildroot.tar.xz"
     echo "✅ Toolchain успешно настроен, архив удален."
 fi
 
@@ -58,8 +62,7 @@ if [ -f "$MIPS_DOCKER_DIR/romfs.tar.gz" ]; then
 else
     echo "Скачивание romfs.tar.gz..."
     $DOWNLOAD_CMD "$MIPS_DOCKER_DIR/romfs.tar.gz" "$ROMFS_URL"
-
-    echo "✅ Файл romfs.tar.gz успешно загружен"
+    echo "✅ Файл romfs.tar.gz успешно загружен."
 fi
 
 ######################################################################
@@ -68,7 +71,7 @@ echo "--- 3. Настройка исходников Net-SNMP ---"
 if [ -d "$NETSNMP_DIR" ]; then
     echo "✅ Исходники Net-SNMP уже распакованы в $NETSNMP_DIR."
 else
-    echo "Скачивание архива Net-SNMP $NETSNMP_VER..."
+    echo "Cкачивание архива Net-SNMP $NETSNMP_VER из GitHub..."
     $DOWNLOAD_CMD "$LIB_DIR/net-snmp-$NETSNMP_VER.tar.gz" "$NETSNMP_URL"
     
     echo "Распаковка архива Net-SNMP..."

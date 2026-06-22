@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Прерывать выполнение скрипта при любой ошибке
-set -e
-
 # --- НАСТРОЙКА ПУТЕЙ ---
 PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 BUILD_DIR="$PROJECT_ROOT/build"
@@ -26,10 +23,11 @@ echo "Путь к Sysroot:  $SYSROOT"
 echo "========================================================="
 
 # --- ШАГ 1: ПРОВЕРКА И СБОРКА БИБЛИОТЕКИ NET-SNMP ---
-if [ -f "$SYSROOT/usr/lib/libnetsnmpagent.so" ]; then
-    echo "✅ Шаг 1: Библиотека Net-SNMP уже вживлена в Toolchain. Пропускаем сборку библиотеки."
+# Проверяем наличие ключевого файла библиотеки и папки с инклудами в тулчейне
+if [ -f "$SYSROOT/usr/lib/libnetsnmpagent.so" ] && [ -d "$SYSROOT/usr/include/net-snmp" ]; then
+    echo "✅ Шаг 1: Библиотека и заголовочные файлы Net-SNMP уже вживлены в Toolchain. Пропускаем сборку библиотеки."
 else
-    echo "⚠️ Шаг 1: Библиотека Net-SNMP не найдена в Toolchain. Начинаем сборку..."
+    echo "⚠️ Шаг 1: Библиотека или заголовочные файлы Net-SNMP не найдены в Toolchain. Начинаем сборку..."
 
     # Проверяем, подготовил ли setup.sh исходники
     if [ ! -d "$NETSNMP_DIR" ]; then
@@ -58,17 +56,23 @@ else
     echo "Компиляция Net-SNMP (это может занять пару минут)..."
     PATH=$PATH make -j$(nproc)
 
-    echo "Ручное копирование файлов (.so/.a) в Sysroot..."
+    echo "Ручное копирование файлов (.so/.a) и заголовочных файлов в Sysroot..."
     mkdir -p "$SYSROOT/usr/lib"
+    mkdir -p "$SYSROOT/usr/include"
+    
+    # 🌟 ИСПРАВЛЕНИЕ: Копируем заголовки, чтобы компилятор видел net-snmp-config.h
+    cp -r include/net-snmp "$SYSROOT/usr/include/"
+
+    # Копируем скомпилированные .so библиотеки
     cp -d snmplib/.libs/libnetsnmp* "$SYSROOT/usr/lib/"
     cp -d agent/.libs/libnetsnmp* "$SYSROOT/usr/lib/"
     cp -d agent/helpers/.libs/libnetsnmp* "$SYSROOT/usr/lib/"
     cp -d agent/mibgroup/.libs/libnetsnmp* "$SYSROOT/usr/lib/" 2>/dev/null || true
 
-    echo "✅ Библиотека Net-SNMP успешно установлена в Toolchain!"
+    echo "✅ Библиотека и заголовки Net-SNMP успешно установлены в Toolchain!"
 fi
 
-# --- ШАГ 2: СБОРКА АГЕНТА ---
+# --- ШАГ 2: СБОРКА ТВОЕГО АГЕНТА ---
 echo "---------------------------------------------------------"
 echo "Шаг 2: Финальная сборка SNMP-агента"
 echo "---------------------------------------------------------"
@@ -83,7 +87,7 @@ INCLUDES="-I$SYSROOT/usr/include"
 LDFLAGS="-L$SYSROOT/usr/lib"
 SNMP_LIBS="-lnetsnmpagent -lnetsnmp -lnetsnmpmibs -lnetsnmphelpers"
 
-echo "🚀 Компиляция бинарника my_agent под MIPS..."
+echo "Компиляция бинарника my_agent под MIPS..."
 mips-linux-gcc -o "$BUILD_DIR/my_agent" \
     $SRC_FILES \
     --sysroot="$SYSROOT" \
@@ -97,7 +101,7 @@ if [ $? -eq 0 ]; then
     echo "УСПЕХ! Проект полностью собран."
     echo "Исполняемый файл: $BUILD_DIR/my_agent"
     
-    # Копирование в папку mips_docker
+    # Копирование созданного агента в папку mips_docker
     echo "Копирование бинарника в папку mips_docker..."
     mkdir -p "$PROJECT_ROOT/mips_docker"
     cp "$BUILD_DIR/my_agent" "$PROJECT_ROOT/mips_docker/"

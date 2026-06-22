@@ -9,6 +9,9 @@
 <details>
   <summary><b>Посмотреть историю версий (Changelog)</b></summary>
 
+  ### v2.0.1
+  * Поправлена сборка под MIPS и установки
+
   ### v2.0.0
   * Добавлена автоматизация установки, распаковки и создание SNMP-агента
   * Теперь можно протестировать файл прямо в проекте (добавлен docker)
@@ -54,3 +57,12 @@ chmod +x install.sh
 ### Готовый бинарный файл будет лежать в build:
 
     build/my_agent
+
+### Сборка для докера
+
+```sh
+BUILDX_GIT_INFO=false docker build -t mips-snmp-agent -f mips_docker/Dockerfile .
+```
+```sh
+docker run -it --name snmp_container -p 1161:161/udp mips-snmp-agent
+```

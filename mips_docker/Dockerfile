@@ -16,7 +16,7 @@ RUN mkdir -p /app/romfs && tar xf romfs.tar.gz -C /app/romfs && rm romfs.tar.gz
 COPY toolchain/mips-buildroot-linux-uclibc_sdk-buildroot/mips-buildroot-linux-uclibc/sysroot/usr/lib/libnetsnmp*.so* /app/romfs/usr/lib/
 
 # 3. Копируем собранного MIPS-агента внутрь romfs
-COPY build/my_agent /app/romfs/usr/bin/my_agent
+COPY mips_docker/my_agent /app/romfs/usr/bin/my_agent
 RUN chmod +x /app/romfs/usr/bin/my_agent
 
 # 4. Копируем ВСЕ системные библиотеки (libc, libpthread, ld-uClibc) из тулчейна
