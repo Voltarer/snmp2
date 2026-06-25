@@ -11,18 +11,22 @@ void stop_server(int a) {
     keep_running = 0;
 }
 
+void init_ifTable(void);
+
 int main(int argc, char **argv) {
     // Устанавливаем (set), субагент AgentX
     netsnmp_ds_set_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_ROLE, 1);
 
+    init_master_agent();
+
     // Инициализируем фабрику агентов под именем "test"
-    init_agent("test");
+    init_agent("my_agent");
 
     // Инициализируем таблицы
     init_ifTable();
 
     // Читаем конфигурацию "test"
-    init_snmp("test");
+    init_snmp("my_agent");
 
     keep_running = 1;
 
@@ -39,7 +43,7 @@ int main(int argc, char **argv) {
     }
 
     // Корректное завершение работы
-    snmp_shutdown("test");
+    snmp_shutdown("my_agent");
 
     return 0;
 }
