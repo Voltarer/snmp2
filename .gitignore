@@ -1,5 +1,5 @@
 *.exe
-build/
+build/my_agent
 .vscode
 toolchain/
 net-snmp-5.9.3/
