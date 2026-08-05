@@ -1,6 +1,6 @@
 # SNMP Agent
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.2-blue)
 
 Установка и распаковка пакета выполняется через скрипт `install.sh`.
 
@@ -8,6 +8,9 @@
 
 <details>
   <summary><b>Посмотреть историю версий (Changelog)</b></summary>
+
+  ### v2.0.2
+  * Исправлен .conf, теперь дерево вычитывается нормально,скрипт сборки стал под статическую сборку
 
   ### v2.0.1
   * Поправлена сборка под MIPS и установки

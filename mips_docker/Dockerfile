@@ -8,26 +8,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# 1. Копируем и распаковываем базовую файловую систему устройства
+# Копируем и распаковываем базовую файловую систему устройства
 COPY mips_docker/romfs.tar.gz .
 RUN mkdir -p /app/romfs && tar xf romfs.tar.gz -C /app/romfs && rm romfs.tar.gz
 
-# 2. Копируем скомпилированные под MIPS библиотеки net-snmp
+# Копируем скомпилированные под MIPS библиотеки net-snmp
 COPY toolchain/mips-buildroot-linux-uclibc_sdk-buildroot/mips-buildroot-linux-uclibc/sysroot/usr/lib/libnetsnmp*.so* /app/romfs/usr/lib/
 
-# 3. Копируем собранного MIPS-агента
+# Копируем собранного MIPS-агента
 COPY mips_docker/my_agent /app/romfs/usr/bin/my_agent
 RUN chmod +x /app/romfs/usr/bin/my_agent
 
-# 4. Копируем конфигурационный файл агента
-COPY mips_docker/my_agent.conf /app/romfs/usr/bin/my_agent.conf
-# Можно также положить в /etc/snmp/, но чтобы не плодить папки, оставим рядом с бинарником
+# Переносим конфиг в системную директорию Net-SNMP
+RUN mkdir -p /app/romfs/usr/etc/snmp
+COPY mips_docker/my_agent.conf /app/romfs/usr/etc/snmp/my_agent.conf
 
-# 5. Копируем ВСЕ системные библиотеки из тулчейна
+# Копируем текстовые MIB-файлы в файловую систему эмулятора
+RUN mkdir -p /app/romfs/usr/share/snmp/mibs
+COPY mips_docker/mibs/ /app/romfs/usr/share/snmp/mibs/
+
+# Копируем ВСЕ системные библиотеки из тулчейна
 RUN mkdir -p /lib /app/romfs/lib
 COPY toolchain/mips-buildroot-linux-uclibc_sdk-buildroot/mips-buildroot-linux-uclibc/sysroot/lib/*.so* /lib/
 COPY toolchain/mips-buildroot-linux-uclibc_sdk-buildroot/mips-buildroot-linux-uclibc/sysroot/lib/*.so* /app/romfs/lib/
 
 USER root
 
-CMD ["qemu-mips-static", "-L", "/app/romfs", "-E", "LD_LIBRARY_PATH=/lib:/usr/lib", "-E", "MIBS=+ALL", "/app/romfs/usr/bin/my_agent", "-c", "/app/romfs/usr/bin/my_agent.conf", "-Dread_config"]
+CMD ["qemu-mips-static", "-L", "/app/romfs", "-E", "LD_LIBRARY_PATH=/lib:/usr/lib", "-E", "MIBS=+ALL", "-E", "MIBDIRS=/usr/share/snmp/mibs", "/app/romfs/usr/bin/my_agent"]

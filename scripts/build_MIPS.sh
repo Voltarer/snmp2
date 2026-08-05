@@ -88,7 +88,7 @@ LDFLAGS="-L$SYSROOT/usr/lib"
 SNMP_LIBS="-lnetsnmpagent -lnetsnmp -lnetsnmpmibs -lnetsnmphelpers"
 
 echo "Компиляция бинарника my_agent под MIPS..."
-mips-linux-gcc -o "$BUILD_DIR/my_agent" \
+mips-linux-gcc -static -o "$BUILD_DIR/my_agent" \
     $SRC_FILES \
     --sysroot="$SYSROOT" \
     $INCLUDES \
